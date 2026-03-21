@@ -17,21 +17,17 @@ technologies = [
     { "name": "Perl", "taught": "Aaaaaah please no!", "description": "What is this, 1999?" }
 ]
 
-class OpinionForm(FlaskForm):
-    opinion = StringField('Your Opinion: ',validators = [DataRequired(),Length(min=0,max=100)])
-    submit = SubmitField('Submit')
-
 @app.route('/')
 def galleryPage():
-    return render_template('index.html',technologies = technologies)
+    return render_template('index.html')
 
-@app.route('/results/<int:techId>',methods=['GET','POST'])
-def singleProductPage(techId):
-    form = OpinionForm()
-    if form.validate_on_submit():
-        return render_template('SingleTechOpinion.html', technology = technologies[techId],opinion = form.opinion.data)
-    else:
-        return render_template('SingleVaccine.html', technology = technologies[techId], form = form)
+@app.route('/results')
+def resultsPage():
+    return render_template('results.html', vaccines = technologies)
+
+@app.route('/results/<int:vaccineId>')
+def singleVaccinePage(vaccineId):
+    return render_template('SingleVaccine.html', technology = technologies[techId], form = form)
 
 if __name__ == '__main__':
     app.run(debug=True)

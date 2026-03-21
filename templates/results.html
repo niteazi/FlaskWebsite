@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+    
+{% block content %}
+    <h1>Applicable Vaccines</h1>
+    <ul>
+        {% for vaccine in vaccines %}
+            <li>{{ vaccine.name }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}
