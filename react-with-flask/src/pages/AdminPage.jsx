@@ -406,7 +406,7 @@ function AdminPage() {
             padding: '8px 12px',
             borderRadius: 6,
             border: activeTab === 'tree' ? '1px solid #0f766e' : '1px solid #d4d4d8',
-            background: activeTab === 'tree' ? '#ecfeff' : '#fafafa',
+            background: activeTab === 'tree' ? '#17686c' : '#17686c',
           }}
         >
           Decision Tree
@@ -418,7 +418,7 @@ function AdminPage() {
             padding: '8px 12px',
             borderRadius: 6,
             border: activeTab === 'vaccines' ? '1px solid #0f766e' : '1px solid #d4d4d8',
-            background: activeTab === 'vaccines' ? '#ecfeff' : '#fafafa',
+            background: activeTab === 'vaccines' ? '#17686c' : '#17686c',
           }}
         >
           Vaccines
