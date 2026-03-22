@@ -9,6 +9,11 @@ function ResultsPage() {
 
   const name = location.state?.name || 'Guest'
   const postcode = location.state?.postcode || 'Not provided'
+  const email = location.state?.email || 'Not provided'
+  const city = location.state?.city || 'Not provided'
+  const country = location.state?.country || 'Not provided'
+  const preferredVaccine = location.state?.preferredVaccine || 'Not selected'
+  const firebaseSyncEnabled = location.state?.firebaseSyncEnabled ? 'Enabled' : 'Disabled'
 
   useEffect(() => {
     const loadTechnologies = async () => {
@@ -33,6 +38,10 @@ function ResultsPage() {
       <h1>Next Page</h1>
       <p><strong>Name:</strong> {name}</p>
       <p><strong>Postcode:</strong> {postcode}</p>
+      <p><strong>Email:</strong> {email}</p>
+      <p><strong>Location:</strong> {city}, {country}</p>
+      <p><strong>Vaccine preference:</strong> {preferredVaccine}</p>
+      <p><strong>Firebase sync:</strong> {firebaseSyncEnabled}</p>
 
       <h2 style={{ marginTop: 24 }}>Technologies</h2>
       {error ? (

@@ -5,13 +5,15 @@ import FormPage from './pages/FormPage'
 import ResultsPage from './pages/ResultsPage'
 import AboutPage from './pages/AboutPage'
 import MyAccount from './pages/MyAccount'
+import HomePage from './pages/HomePage'
 
 function App() {
   return (
     <>
       <Header />
       <Routes>
-        <Route path="/" element={<FormPage />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/form" element={<FormPage />} />
         <Route path="/results" element={<ResultsPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/account" element={<MyAccount />} />
