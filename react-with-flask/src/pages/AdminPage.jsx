@@ -20,7 +20,7 @@ function AdminPage() {
   const [newNodeId, setNewNodeId] = useState('')
   const [newNodePrompt, setNewNodePrompt] = useState('')
   const [newNodeType, setNewNodeType] = useState('choice')
-  const [quickVaccineNodeId, setQuickVaccineNodeId] = useState('vaccine_check')
+  const [newInputFieldType, setNewInputFieldType] = useState('text')
   const [selectedNodeId, setSelectedNodeId] = useState('')
 
   const nodeIds = useMemo(() => Object.keys(formConfig.nodes || {}), [formConfig])
@@ -114,7 +114,13 @@ function AdminPage() {
               id,
               prompt,
               nodeType: 'input',
-              fields: [{ key: 'field1', label: 'Field 1', inputType: 'text' }],
+              fields: [
+                {
+                  key: newInputFieldType === 'vaccine' ? 'vaccine' : 'field1',
+                  label: newInputFieldType === 'vaccine' ? 'Vaccine' : 'Field 1',
+                  inputType: newInputFieldType,
+                },
+              ],
               nextNodeId: '',
             }
           : { id, prompt, nodeType: 'result' }
@@ -130,34 +136,9 @@ function AdminPage() {
 
     setNewNodeId('')
     setNewNodePrompt('')
+    setNewInputFieldType('text')
     setSelectedNodeId(id)
     setStatus('Node added. Save to persist changes.')
-  }
-
-  const addVaccineQuestionNode = () => {
-    const nodeId = quickVaccineNodeId.trim() || 'vaccine_check'
-    if (formConfig.nodes[nodeId]) {
-      setStatus('Vaccine node ID already exists. Use another ID.')
-      return
-    }
-
-    setFormConfig((previous) => ({
-      ...previous,
-      nodes: {
-        ...previous.nodes,
-        [nodeId]: {
-          id: nodeId,
-          prompt: 'Please select your vaccine',
-          nodeType: 'input',
-          fields: [{ key: 'vaccine', label: 'Vaccine', inputType: 'vaccine' }],
-          nextNodeId: '',
-        },
-      },
-      startNodeId: previous.startNodeId || nodeId,
-    }))
-
-    setSelectedNodeId(nodeId)
-    setStatus('Vaccine question node created. Link it to a next node and save.')
   }
 
   const removeNode = (nodeId) => {
@@ -432,20 +413,17 @@ function AdminPage() {
                 <option value="input">Input</option>
                 <option value="result">Result</option>
               </select>
+              {newNodeType === 'input' ? (
+                <label style={{ display: 'grid', gap: 6 }}>
+                  First input field type
+                  <select value={newInputFieldType} onChange={(event) => setNewInputFieldType(event.target.value)}>
+                    <option value="text">Text</option>
+                    <option value="vaccine">Vaccine dropdown</option>
+                  </select>
+                </label>
+              ) : null}
               <button type="button" onClick={addNode} style={{ width: 160, padding: '8px 12px' }}>
                 Add node
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gap: 8, marginBottom: 16, border: '1px solid #e5e7eb', padding: 10, borderRadius: 8 }}>
-              <h3 style={{ margin: 0 }}>Quick helper: Vaccine question node</h3>
-              <input
-                placeholder="Node id"
-                value={quickVaccineNodeId}
-                onChange={(event) => setQuickVaccineNodeId(event.target.value)}
-              />
-              <button type="button" onClick={addVaccineQuestionNode} style={{ width: 260, padding: '8px 12px' }}>
-                Create vaccine question node
               </button>
             </div>
 
