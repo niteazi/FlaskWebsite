@@ -21,6 +21,7 @@ function AdminPage() {
   const [newNodePrompt, setNewNodePrompt] = useState('')
   const [newNodeType, setNewNodeType] = useState('choice')
   const [quickVaccineNodeId, setQuickVaccineNodeId] = useState('vaccine_check')
+  const [selectedNodeId, setSelectedNodeId] = useState('')
 
   const nodeIds = useMemo(() => Object.keys(formConfig.nodes || {}), [formConfig])
   const hasUnlinkedConnections = useMemo(() => {
@@ -39,6 +40,17 @@ function AdminPage() {
       return false
     })
   }, [formConfig, nodeIds])
+
+  useEffect(() => {
+    if (nodeIds.length === 0) {
+      setSelectedNodeId('')
+      return
+    }
+
+    if (!selectedNodeId || !formConfig.nodes[selectedNodeId]) {
+      setSelectedNodeId(nodeIds[0])
+    }
+  }, [formConfig.nodes, nodeIds, selectedNodeId])
 
   const loadAdminData = async () => {
     if (!hasFirebaseConfig) {
@@ -118,6 +130,7 @@ function AdminPage() {
 
     setNewNodeId('')
     setNewNodePrompt('')
+    setSelectedNodeId(id)
     setStatus('Node added. Save to persist changes.')
   }
 
@@ -143,6 +156,7 @@ function AdminPage() {
       startNodeId: previous.startNodeId || nodeId,
     }))
 
+    setSelectedNodeId(nodeId)
     setStatus('Vaccine question node created. Link it to a next node and save.')
   }
 
@@ -179,6 +193,8 @@ function AdminPage() {
         startNodeId: previous.startNodeId === nodeId ? Object.keys(nextNodes)[0] || '' : previous.startNodeId,
       }
     })
+
+    setSelectedNodeId((previous) => (previous === nodeId ? '' : previous))
 
     setStatus('Node removed. Save to persist changes.')
   }
@@ -436,140 +452,167 @@ function AdminPage() {
             <div style={{ display: 'grid', gap: 12 }}>
               {nodeIds.map((nodeId) => {
                 const node = formConfig.nodes[nodeId]
+                const isSelected = selectedNodeId === nodeId
+                const summary =
+                  node.nodeType === 'choice'
+                    ? `${(node.options || []).length} options`
+                    : node.nodeType === 'input'
+                      ? `${(node.fields || []).length} fields`
+                      : 'Result node'
                 return (
                   <article key={nodeId} style={{ border: '1px solid #e4e4e7', borderRadius: 8, padding: 12 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <strong>{nodeId}</strong>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedNodeId(nodeId)}
+                        style={{
+                          flex: 1,
+                          textAlign: 'left',
+                          padding: '8px 10px',
+                          borderRadius: 6,
+                          border: isSelected ? '1px solid #0f766e' : '1px solid #d4d4d8',
+                          background: isSelected ? '#ecfeff' : '#fafafa',
+                        }}
+                      >
+                        <strong>{nodeId}</strong>
+                        <span style={{ marginLeft: 8, color: '#52525b', fontSize: 13 }}>
+                          {node.nodeType} • {summary}
+                        </span>
+                      </button>
                       <button
                         type="button"
                         onClick={() => removeNode(nodeId)}
                         style={{ padding: '6px 10px', background: '#fee2e2' }}
                       >
-                        Remove node
+                        Remove
                       </button>
                     </div>
 
-                    <label style={{ display: 'grid', gap: 6, marginTop: 8 }}>
-                      Prompt
-                      <input
-                        value={node.prompt || ''}
-                        onChange={(event) => updateNode(nodeId, { prompt: event.target.value })}
-                      />
-                    </label>
+                    {isSelected ? (
+                      <>
+                        <label style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+                          Prompt
+                          <input
+                            value={node.prompt || ''}
+                            onChange={(event) => updateNode(nodeId, { prompt: event.target.value })}
+                          />
+                        </label>
 
-                    <label style={{ display: 'grid', gap: 6, marginTop: 8 }}>
-                      Type
-                      <select
-                        value={node.nodeType || 'choice'}
-                        onChange={(event) => updateNode(nodeId, { nodeType: event.target.value })}
-                      >
-                        <option value="choice">Choice</option>
-                        <option value="input">Input</option>
-                        <option value="result">Result</option>
-                      </select>
-                    </label>
-
-                    {node.nodeType === 'choice' && (
-                      <div style={{ marginTop: 10 }}>
-                        <h4 style={{ margin: '0 0 8px 0' }}>Options</h4>
-                        {(node.options || []).map((option) => (
-                          <div
-                            key={option.id}
-                            style={{ display: 'grid', gap: 6, marginBottom: 8, border: '1px solid #f4f4f5', padding: 8 }}
-                          >
-                            <input
-                              value={option.label || ''}
-                              onChange={(event) => updateChoiceOption(nodeId, option.id, 'label', event.target.value)}
-                              placeholder="Option label"
-                            />
-                            <select
-                              value={option.nextNodeId || ''}
-                              onChange={(event) => updateChoiceOption(nodeId, option.id, 'nextNodeId', event.target.value)}
-                            >
-                              <option value="">End flow</option>
-                              {nodeIds.map((id) => (
-                                <option key={id} value={id}>
-                                  {id}
-                                </option>
-                              ))}
-                            </select>
-                            {option.nextNodeId && !formConfig.nodes[option.nextNodeId] ? (
-                              <span style={{ color: '#b45309', fontSize: 12 }}>Unlinked target: {option.nextNodeId}</span>
-                            ) : null}
-                            <button
-                              type="button"
-                              onClick={() => removeChoiceOption(nodeId, option.id)}
-                              style={{ width: 140, padding: '6px 10px', background: '#fee2e2' }}
-                            >
-                              Remove option
-                            </button>
-                          </div>
-                        ))}
-
-                        <button type="button" onClick={() => addChoiceOption(nodeId)} style={{ padding: '8px 12px' }}>
-                          Add option
-                        </button>
-                      </div>
-                    )}
-
-                    {node.nodeType === 'input' && (
-                      <div style={{ marginTop: 10 }}>
-                        <label style={{ display: 'grid', gap: 6, marginBottom: 8 }}>
-                          Next node
+                        <label style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+                          Type
                           <select
-                            value={node.nextNodeId || ''}
-                            onChange={(event) => updateNode(nodeId, { nextNodeId: event.target.value })}
+                            value={node.nodeType || 'choice'}
+                            onChange={(event) => updateNode(nodeId, { nodeType: event.target.value })}
                           >
-                            <option value="">End flow</option>
-                            {nodeIds.map((id) => (
-                              <option key={id} value={id}>
-                                {id}
-                              </option>
-                            ))}
+                            <option value="choice">Choice</option>
+                            <option value="input">Input</option>
+                            <option value="result">Result</option>
                           </select>
                         </label>
-                        {node.nextNodeId && !formConfig.nodes[node.nextNodeId] ? (
-                          <p style={{ color: '#b45309', marginTop: 0 }}>Unlinked target: {node.nextNodeId}</p>
-                        ) : null}
 
-                        <h4 style={{ margin: '0 0 8px 0' }}>Fields</h4>
-                        {(node.fields || []).map((field, index) => (
-                          <div
-                            key={`${nodeId}-${index}`}
-                            style={{ display: 'grid', gap: 6, marginBottom: 8, border: '1px solid #f4f4f5', padding: 8 }}
-                          >
-                            <input
-                              value={field.key || ''}
-                              onChange={(event) => updateInputField(nodeId, index, 'key', event.target.value)}
-                              placeholder="Field key"
-                            />
-                            <input
-                              value={field.label || ''}
-                              onChange={(event) => updateInputField(nodeId, index, 'label', event.target.value)}
-                              placeholder="Field label"
-                            />
-                            <select
-                              value={field.inputType || 'text'}
-                              onChange={(event) => updateInputField(nodeId, index, 'inputType', event.target.value)}
-                            >
-                              <option value="text">Text</option>
-                              <option value="vaccine">Vaccine dropdown</option>
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => removeInputField(nodeId, index)}
-                              style={{ width: 130, padding: '6px 10px', background: '#fee2e2' }}
-                            >
-                              Remove field
+                        {node.nodeType === 'choice' && (
+                          <div style={{ marginTop: 10 }}>
+                            <h4 style={{ margin: '0 0 8px 0' }}>Options</h4>
+                            {(node.options || []).map((option) => (
+                              <div
+                                key={option.id}
+                                style={{ display: 'grid', gap: 6, marginBottom: 8, border: '1px solid #f4f4f5', padding: 8 }}
+                              >
+                                <input
+                                  value={option.label || ''}
+                                  onChange={(event) => updateChoiceOption(nodeId, option.id, 'label', event.target.value)}
+                                  placeholder="Option label"
+                                />
+                                <select
+                                  value={option.nextNodeId || ''}
+                                  onChange={(event) => updateChoiceOption(nodeId, option.id, 'nextNodeId', event.target.value)}
+                                >
+                                  <option value="">End flow</option>
+                                  {nodeIds.map((id) => (
+                                    <option key={id} value={id}>
+                                      {id}
+                                    </option>
+                                  ))}
+                                </select>
+                                {option.nextNodeId && !formConfig.nodes[option.nextNodeId] ? (
+                                  <span style={{ color: '#b45309', fontSize: 12 }}>Unlinked target: {option.nextNodeId}</span>
+                                ) : null}
+                                <button
+                                  type="button"
+                                  onClick={() => removeChoiceOption(nodeId, option.id)}
+                                  style={{ width: 140, padding: '6px 10px', background: '#fee2e2' }}
+                                >
+                                  Remove option
+                                </button>
+                              </div>
+                            ))}
+
+                            <button type="button" onClick={() => addChoiceOption(nodeId)} style={{ padding: '8px 12px' }}>
+                              Add option
                             </button>
                           </div>
-                        ))}
+                        )}
 
-                        <button type="button" onClick={() => addInputField(nodeId)} style={{ padding: '8px 12px' }}>
-                          Add field
-                        </button>
-                      </div>
-                    )}
+                        {node.nodeType === 'input' && (
+                          <div style={{ marginTop: 10 }}>
+                            <label style={{ display: 'grid', gap: 6, marginBottom: 8 }}>
+                              Next node
+                              <select
+                                value={node.nextNodeId || ''}
+                                onChange={(event) => updateNode(nodeId, { nextNodeId: event.target.value })}
+                              >
+                                <option value="">End flow</option>
+                                {nodeIds.map((id) => (
+                                  <option key={id} value={id}>
+                                    {id}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            {node.nextNodeId && !formConfig.nodes[node.nextNodeId] ? (
+                              <p style={{ color: '#b45309', marginTop: 0 }}>Unlinked target: {node.nextNodeId}</p>
+                            ) : null}
+
+                            <h4 style={{ margin: '0 0 8px 0' }}>Fields</h4>
+                            {(node.fields || []).map((field, index) => (
+                              <div
+                                key={`${nodeId}-${index}`}
+                                style={{ display: 'grid', gap: 6, marginBottom: 8, border: '1px solid #f4f4f5', padding: 8 }}
+                              >
+                                <input
+                                  value={field.key || ''}
+                                  onChange={(event) => updateInputField(nodeId, index, 'key', event.target.value)}
+                                  placeholder="Field key"
+                                />
+                                <input
+                                  value={field.label || ''}
+                                  onChange={(event) => updateInputField(nodeId, index, 'label', event.target.value)}
+                                  placeholder="Field label"
+                                />
+                                <select
+                                  value={field.inputType || 'text'}
+                                  onChange={(event) => updateInputField(nodeId, index, 'inputType', event.target.value)}
+                                >
+                                  <option value="text">Text</option>
+                                  <option value="vaccine">Vaccine dropdown</option>
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => removeInputField(nodeId, index)}
+                                  style={{ width: 130, padding: '6px 10px', background: '#fee2e2' }}
+                                >
+                                  Remove field
+                                </button>
+                              </div>
+                            ))}
+
+                            <button type="button" onClick={() => addInputField(nodeId)} style={{ padding: '8px 12px' }}>
+                              Add field
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    ) : null}
                   </article>
                 )
               })}

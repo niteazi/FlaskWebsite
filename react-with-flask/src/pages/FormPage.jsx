@@ -160,15 +160,6 @@ function FormPage() {
     finalizeToResults(nextHistory, nextAnswers)
   }
 
-  const restartFlow = () => {
-    setCurrentNodeId(formConfig.startNodeId)
-    setNodeTrail([])
-    setHistory([])
-    setAnswers({})
-    setInputDraft({})
-    setErrors({})
-  }
-
   const goToPreviousNode = () => {
     if (nodeTrail.length === 0) {
       return
@@ -229,12 +220,6 @@ function FormPage() {
   return (
     <main className="nhs-page" style={{ maxWidth: 720 }}>
       <h1>FindMyJabs</h1>
-      <p>Decision node: {currentNode.id} ({currentNode.nodeType})</p>
-      <p style={{ marginTop: 8, color: '#52525b' }}>
-        {hasFirebaseConfig
-          ? 'Decision tree and vaccines are loaded from Firebase.'
-          : 'Firebase is not configured yet.'}
-      </p>
 
       <section style={{ display: 'grid', gap: 14, marginTop: 24 }}>
         <h2 style={{ margin: 0 }}>{currentNode.prompt}</h2>
@@ -287,9 +272,6 @@ function FormPage() {
             style={{ width: 170, padding: '10px 14px' }}
           >
             Previous question
-          </button>
-          <button type="button" onClick={restartFlow} style={{ width: 160, padding: '10px 14px' }}>
-            Restart Flow
           </button>
         </div>
       </section>
