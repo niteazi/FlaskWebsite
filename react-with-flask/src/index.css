@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+:root {
+  --nhs-blue: #005eb8;
+  --nhs-blue-dark: #003087;
+  --nhs-white: #ffffff;
+  --nhs-black: #212b32;
+  --nhs-grey-1: #425563;
+  --nhs-grey-5: #d8dde0;
+  --nhs-grey-6: #f0f4f5;
+  --nhs-green: #007f3b;
+  --nhs-red: #d5281b;
+  --sans: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  font: 18px/1.5 var(--sans);
+  color-scheme: light;
+  color: var(--nhs-black);
+  background: var(--nhs-grey-6);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  background: var(--nhs-grey-6);
+  color: var(--nhs-black);
+}
+
+#root {
+  width: 100%;
+  min-height: 100svh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 700;
+  color: var(--nhs-black);
+  margin: 0 0 12px;
+}
+
+h1 {
+  font-size: 2.25rem;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+p {
+  margin: 0;
+}
+
+code {
+  font-family: var(--mono);
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--nhs-black);
+  font-size: 14px;
+  line-height: 1.35;
+  padding: 4px 8px;
+  background: #e8edee;
+}
+
+main {
+  color: var(--nhs-black);
+}
+
+input,
+select,
+textarea {
+  border: 2px solid var(--nhs-grey-1);
+  border-radius: 2px;
+  padding: 10px 12px;
+  font: inherit;
+  background: var(--nhs-white);
+  color: var(--nhs-black);
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+  outline: 3px solid #ffeb3b;
+  outline-offset: 0;
+}
+
+button {
+  border: 0;
+  border-radius: 4px;
+  background: var(--nhs-blue);
+  color: var(--nhs-white);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--nhs-blue-dark);
+}
+
+button:disabled {
+  background: #7f98b2;
+  cursor: not-allowed;
+}
+
+.nhs-page {
+  max-width: 1100px;
+  margin: 24px auto;
+  padding: 0 20px;
+}
+
+.nhs-card {
+  background: var(--nhs-white);
+  border: 1px solid var(--nhs-grey-5);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.nhs-muted {
+  color: var(--nhs-grey-1);
+}
+
+.nhs-status {
+  color: var(--nhs-green);
+  font-weight: 600;
+}
+
+.nhs-danger {
+  background: #fde8e7 !important;
+  color: var(--nhs-red) !important;
+}
