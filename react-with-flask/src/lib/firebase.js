@@ -7,6 +7,7 @@ import {
   getDoc,
   getDocs,
   getFirestore,
+  onSnapshot,
   query,
   setDoc,
   updateDoc,
@@ -198,6 +199,31 @@ export const getFormConfig = async () => {
     console.error('Error fetching form config:', error)
     return defaultFormConfig
   }
+}
+
+export const subscribeToFormConfig = (onConfig, onError) => {
+  if (!firestore) {
+    onConfig(defaultFormConfig)
+    return () => {}
+  }
+
+  return onSnapshot(
+    formConfigRef(),
+    (snapshot) => {
+      if (!snapshot.exists()) {
+        onConfig(defaultFormConfig)
+        return
+      }
+
+      onConfig(normalizeDecisionTreeConfig(snapshot.data()))
+    },
+    (error) => {
+      console.error('Error subscribing to form config:', error)
+      if (typeof onError === 'function') {
+        onError(error)
+      }
+    },
+  )
 }
 
 export const saveFormConfig = async (questions) => {

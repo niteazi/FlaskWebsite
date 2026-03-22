@@ -7,6 +7,7 @@ import AboutPage from './pages/AboutPage'
 import MyAccount from './pages/MyAccount'
 import HomePage from './pages/HomePage'
 import AdminPage from './pages/AdminPage'
+import VaccinesPage from './pages/VaccinesPage'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/account" element={<MyAccount />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/vaccines" element={<VaccinesPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

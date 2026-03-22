@@ -1,26 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  addVaccine,
   defaultFormConfig,
-  deleteVaccineById,
-  getAllVaccines,
   getFormConfig,
   hasFirebaseConfig,
   saveFormConfig,
-  updateVaccine,
 } from '../lib/firebase'
+import { VaccinesManager } from './VaccinesPage'
 
 function AdminPage() {
   const [formConfig, setFormConfig] = useState(defaultFormConfig)
-  const [vaccines, setVaccines] = useState([])
   const [loading, setLoading] = useState(true)
   const [savingConfig, setSavingConfig] = useState(false)
   const [status, setStatus] = useState('')
-  const [newVaccine, setNewVaccine] = useState({ name: '', data: '', description: '' })
   const [newNodeId, setNewNodeId] = useState('')
   const [newNodePrompt, setNewNodePrompt] = useState('')
   const [newNodeType, setNewNodeType] = useState('choice')
   const [selectedNodeId, setSelectedNodeId] = useState('')
+  const [activeTab, setActiveTab] = useState('tree')
 
   const nodeIds = useMemo(() => Object.keys(formConfig.nodes || {}), [formConfig])
   const hasUnlinkedConnections = useMemo(() => {
@@ -58,9 +54,8 @@ function AdminPage() {
     }
 
     try {
-      const [config, vaccineList] = await Promise.all([getFormConfig(), getAllVaccines()])
+      const config = await getFormConfig()
       setFormConfig(config)
-      setVaccines(vaccineList)
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Failed to load admin data')
     } finally {
@@ -389,42 +384,6 @@ function AdminPage() {
     }
   }
 
-  const handleUpdateVaccine = async (id, payload) => {
-    try {
-      await updateVaccine(id, payload)
-      setStatus('Vaccine updated.')
-      await loadAdminData()
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Unable to update vaccine')
-    }
-  }
-
-  const handleDeleteVaccine = async (id) => {
-    try {
-      await deleteVaccineById(id)
-      setStatus('Vaccine deleted.')
-      await loadAdminData()
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Unable to delete vaccine')
-    }
-  }
-
-  const handleAddVaccine = async () => {
-    if (!newVaccine.name.trim()) {
-      setStatus('Vaccine name is required.')
-      return
-    }
-
-    try {
-      await addVaccine(newVaccine)
-      setNewVaccine({ name: '', data: '', description: '' })
-      setStatus('Vaccine added.')
-      await loadAdminData()
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Unable to add vaccine')
-    }
-  }
-
   if (!hasFirebaseConfig) {
     return (
       <main className="nhs-page" style={{ maxWidth: 1100 }}>
@@ -437,15 +396,47 @@ function AdminPage() {
   return (
     <main className="nhs-page" style={{ maxWidth: 1100 }}>
       <h1>Admin</h1>
-      <p>Edit decision-tree nodes and manage vaccine records.</p>
+      <p>Manage decision-tree nodes and vaccines.</p>
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('tree')}
+          style={{
+            padding: '8px 12px',
+            borderRadius: 6,
+            border: activeTab === 'tree' ? '1px solid #0f766e' : '1px solid #d4d4d8',
+            background: activeTab === 'tree' ? '#ecfeff' : '#fafafa',
+          }}
+        >
+          Decision Tree
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('vaccines')}
+          style={{
+            padding: '8px 12px',
+            borderRadius: 6,
+            border: activeTab === 'vaccines' ? '1px solid #0f766e' : '1px solid #d4d4d8',
+            background: activeTab === 'vaccines' ? '#ecfeff' : '#fafafa',
+          }}
+        >
+          Vaccines
+        </button>
+      </div>
+
       {status && <p style={{ color: '#0f766e' }}>{status}</p>}
-      {hasUnlinkedConnections ? (
+      {activeTab === 'tree' && hasUnlinkedConnections ? (
         <p style={{ color: '#b45309' }}>
           Some node connections point to missing targets. Review nodes marked with Unlinked target before saving.
         </p>
       ) : null}
 
-      {loading ? (
+      {activeTab === 'vaccines' ? (
+        <section style={{ marginTop: 20 }}>
+          <VaccinesManager embedded />
+        </section>
+      ) : loading ? (
         <p>Loading admin data...</p>
       ) : (
         <>
@@ -674,44 +665,6 @@ function AdminPage() {
               {savingConfig ? 'Saving...' : 'Save decision tree to Firebase'}
             </button>
           </section>
-
-          <section style={{ marginTop: 20, border: '1px solid #d4d4d8', borderRadius: 8, padding: 16 }}>
-            <h2 style={{ marginTop: 0 }}>Vaccines</h2>
-
-            <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
-              <h3 style={{ margin: 0 }}>Add vaccine</h3>
-              <input
-                placeholder="Name"
-                value={newVaccine.name}
-                onChange={(event) => setNewVaccine((prev) => ({ ...prev, name: event.target.value }))}
-              />
-              <input
-                placeholder="Type / data"
-                value={newVaccine.data}
-                onChange={(event) => setNewVaccine((prev) => ({ ...prev, data: event.target.value }))}
-              />
-              <textarea
-                placeholder="Description"
-                value={newVaccine.description}
-                onChange={(event) => setNewVaccine((prev) => ({ ...prev, description: event.target.value }))}
-                rows={3}
-              />
-              <button type="button" onClick={handleAddVaccine} style={{ width: 160, padding: '10px 14px' }}>
-                Add vaccine
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gap: 12 }}>
-              {vaccines.map((vaccine) => (
-                <VaccineEditor
-                  key={vaccine.id}
-                  vaccine={vaccine}
-                  onSave={handleUpdateVaccine}
-                  onDelete={handleDeleteVaccine}
-                />
-              ))}
-            </div>
-          </section>
         </>
       )}
     </main>
@@ -843,58 +796,6 @@ function DecisionTreePlot({ nodes, startNodeId }) {
         })}
       </svg>
     </div>
-  )
-}
-
-function VaccineEditor({ vaccine, onSave, onDelete }) {
-  const [draft, setDraft] = useState({
-    name: vaccine.name || '',
-    data: vaccine.data || '',
-    description: vaccine.description || '',
-  })
-
-  useEffect(() => {
-    setDraft({
-      name: vaccine.name || '',
-      data: vaccine.data || '',
-      description: vaccine.description || '',
-    })
-  }, [vaccine])
-
-  return (
-    <article style={{ border: '1px solid #e4e4e7', borderRadius: 8, padding: 12 }}>
-      <p style={{ margin: '0 0 8px 0', color: '#52525b', fontSize: 12 }}>ID: {vaccine.id}</p>
-      <div style={{ display: 'grid', gap: 8 }}>
-        <input
-          value={draft.name}
-          placeholder="Name"
-          onChange={(event) => setDraft((prev) => ({ ...prev, name: event.target.value }))}
-        />
-        <input
-          value={draft.data}
-          placeholder="Type / data"
-          onChange={(event) => setDraft((prev) => ({ ...prev, data: event.target.value }))}
-        />
-        <textarea
-          rows={3}
-          value={draft.description}
-          placeholder="Description"
-          onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))}
-        />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button type="button" onClick={() => onSave(vaccine.id, draft)} style={{ padding: '8px 12px' }}>
-            Save
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete(vaccine.id)}
-            style={{ padding: '8px 12px', background: '#fee2e2' }}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </article>
   )
 }
 
