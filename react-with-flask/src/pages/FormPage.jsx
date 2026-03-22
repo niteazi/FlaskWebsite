@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { defaultFormConfig, getAllVaccines, hasFirebaseConfig, subscribeToFormConfig } from '../lib/firebase'
+import { defaultFormConfig, hasFirebaseConfig, subscribeToFormConfig, subscribeToVaccines } from '../lib/firebase'
 
 function FormPage() {
   const navigate = useNavigate()
@@ -49,24 +49,26 @@ function FormPage() {
   }, [])
 
   useEffect(() => {
-    const loadVaccines = async () => {
-      if (!hasFirebaseConfig) {
-        setVaccinesLoading(false)
-        return
-      }
-
-      try {
-        const loadedVaccines = await getAllVaccines()
-        setVaccines(loadedVaccines)
-      } catch (error) {
-        console.error('Error loading vaccines:', error)
-        setVaccines([])
-      } finally {
-        setVaccinesLoading(false)
-      }
+    if (!hasFirebaseConfig) {
+      setVaccinesLoading(false)
+      return () => {}
     }
 
-    loadVaccines()
+    const unsubscribe = subscribeToVaccines(
+      (vaccineList) => {
+        setVaccines(vaccineList)
+        setVaccinesLoading(false)
+      },
+      (error) => {
+        console.error('Error loading vaccines:', error)
+        setVaccines([])
+        setVaccinesLoading(false)
+      },
+    )
+
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
   const validateInputNode = (node) => {

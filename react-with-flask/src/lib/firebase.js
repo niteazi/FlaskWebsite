@@ -280,6 +280,30 @@ export const getAllVaccines = async () => {
   }
 }
 
+export const subscribeToVaccines = (onVaccines, onError) => {
+  if (!firestore) {
+    onVaccines([])
+    return () => {}
+  }
+
+  return onSnapshot(
+    collection(firestore, 'vaccine'),
+    (snapshot) => {
+      const vaccineList = snapshot.docs.map((vaccineDoc) => ({
+        id: vaccineDoc.id,
+        ...vaccineDoc.data(),
+      }))
+      onVaccines(vaccineList)
+    },
+    (error) => {
+      console.error('Error subscribing to vaccines:', error)
+      if (typeof onError === 'function') {
+        onError(error)
+      }
+    },
+  )
+}
+
 export const addVaccine = async (payload) => {
   if (!firestore) {
     return false
