@@ -20,7 +20,6 @@ function AdminPage() {
   const [newNodeId, setNewNodeId] = useState('')
   const [newNodePrompt, setNewNodePrompt] = useState('')
   const [newNodeType, setNewNodeType] = useState('choice')
-  const [newInputFieldType, setNewInputFieldType] = useState('text')
   const [selectedNodeId, setSelectedNodeId] = useState('')
 
   const nodeIds = useMemo(() => Object.keys(formConfig.nodes || {}), [formConfig])
@@ -86,6 +85,81 @@ function AdminPage() {
     }))
   }
 
+  const getNodeTypeOption = (node) => {
+    if (node?.nodeType === 'input' && (node.fields || []).some((field) => field.inputType === 'vaccine')) {
+      return 'vaccine'
+    }
+
+    return node?.nodeType || 'choice'
+  }
+
+  const handleNodeTypeChange = (nodeId, selectedType) => {
+    setFormConfig((previous) => {
+      const node = previous.nodes[nodeId]
+      if (!node) {
+        return previous
+      }
+
+      if (selectedType === 'choice') {
+        return {
+          ...previous,
+          nodes: {
+            ...previous.nodes,
+            [nodeId]: {
+              ...node,
+              nodeType: 'choice',
+              options: Array.isArray(node.options) ? node.options : [],
+            },
+          },
+        }
+      }
+
+      if (selectedType === 'result') {
+        return {
+          ...previous,
+          nodes: {
+            ...previous.nodes,
+            [nodeId]: {
+              ...node,
+              nodeType: 'result',
+            },
+          },
+        }
+      }
+
+      if (selectedType === 'vaccine') {
+        return {
+          ...previous,
+          nodes: {
+            ...previous.nodes,
+            [nodeId]: {
+              ...node,
+              nodeType: 'input',
+              fields: [{ key: 'vaccine', label: 'Vaccine', inputType: 'vaccine' }],
+              nextNodeId: node.nodeType === 'input' ? node.nextNodeId || '' : '',
+            },
+          },
+        }
+      }
+
+      return {
+        ...previous,
+        nodes: {
+          ...previous.nodes,
+          [nodeId]: {
+            ...node,
+            nodeType: 'input',
+            fields:
+              node.nodeType === 'input' && Array.isArray(node.fields) && node.fields.length > 0
+                ? node.fields
+                : [{ key: 'field1', label: 'Field 1', inputType: 'text' }],
+            nextNodeId: node.nodeType === 'input' ? node.nextNodeId || '' : '',
+          },
+        },
+      }
+    })
+  }
+
   const setStartNode = (nodeId) => {
     setFormConfig((previous) => ({
       ...previous,
@@ -109,16 +183,16 @@ function AdminPage() {
     const nextNode =
       newNodeType === 'choice'
         ? { id, prompt, nodeType: 'choice', options: [] }
-        : newNodeType === 'input'
+        : newNodeType === 'input' || newNodeType === 'vaccine'
           ? {
               id,
               prompt,
               nodeType: 'input',
               fields: [
                 {
-                  key: newInputFieldType === 'vaccine' ? 'vaccine' : 'field1',
-                  label: newInputFieldType === 'vaccine' ? 'Vaccine' : 'Field 1',
-                  inputType: newInputFieldType,
+                  key: newNodeType === 'vaccine' ? 'vaccine' : 'field1',
+                  label: newNodeType === 'vaccine' ? 'Vaccine' : 'Field 1',
+                  inputType: newNodeType === 'vaccine' ? 'vaccine' : 'text',
                 },
               ],
               nextNodeId: '',
@@ -136,7 +210,6 @@ function AdminPage() {
 
     setNewNodeId('')
     setNewNodePrompt('')
-    setNewInputFieldType('text')
     setSelectedNodeId(id)
     setStatus('Node added. Save to persist changes.')
   }
@@ -411,17 +484,9 @@ function AdminPage() {
               <select value={newNodeType} onChange={(event) => setNewNodeType(event.target.value)}>
                 <option value="choice">Choice</option>
                 <option value="input">Input</option>
+                <option value="vaccine">Vaccine</option>
                 <option value="result">Result</option>
               </select>
-              {newNodeType === 'input' ? (
-                <label style={{ display: 'grid', gap: 6 }}>
-                  First input field type
-                  <select value={newInputFieldType} onChange={(event) => setNewInputFieldType(event.target.value)}>
-                    <option value="text">Text</option>
-                    <option value="vaccine">Vaccine dropdown</option>
-                  </select>
-                </label>
-              ) : null}
               <button type="button" onClick={addNode} style={{ width: 160, padding: '8px 12px' }}>
                 Add node
               </button>
@@ -430,11 +495,14 @@ function AdminPage() {
             <div style={{ display: 'grid', gap: 12 }}>
               {nodeIds.map((nodeId) => {
                 const node = formConfig.nodes[nodeId]
+                const nodeTypeOption = getNodeTypeOption(node)
                 const isSelected = selectedNodeId === nodeId
                 const summary =
-                  node.nodeType === 'choice'
+                  nodeTypeOption === 'choice'
                     ? `${(node.options || []).length} options`
-                    : node.nodeType === 'input'
+                    : nodeTypeOption === 'vaccine'
+                      ? 'Vaccine field'
+                      : nodeTypeOption === 'input'
                       ? `${(node.fields || []).length} fields`
                       : 'Result node'
                 return (
@@ -454,7 +522,7 @@ function AdminPage() {
                       >
                         <strong>{nodeId}</strong>
                         <span style={{ marginLeft: 8, color: '#52525b', fontSize: 13 }}>
-                          {node.nodeType} • {summary}
+                          {nodeTypeOption} • {summary}
                         </span>
                       </button>
                       <button
@@ -479,11 +547,12 @@ function AdminPage() {
                         <label style={{ display: 'grid', gap: 6, marginTop: 8 }}>
                           Type
                           <select
-                            value={node.nodeType || 'choice'}
-                            onChange={(event) => updateNode(nodeId, { nodeType: event.target.value })}
+                            value={nodeTypeOption}
+                            onChange={(event) => handleNodeTypeChange(nodeId, event.target.value)}
                           >
                             <option value="choice">Choice</option>
                             <option value="input">Input</option>
+                            <option value="vaccine">Vaccine</option>
                             <option value="result">Result</option>
                           </select>
                         </label>
